@@ -7,7 +7,8 @@ COPY --from=gentoo/portage:latest /var/db/repos/gentoo /var/db/repos/gentoo
 
 # ------------------- emerge
 RUN emerge -C sandbox
-RUN echo 'dev-lang/* ~amd64' >> /etc/portage/package.accept_keywords/zz-autounmask
+RUN mkdir -p /etc/portage/package.accept_keywords
+RUN echo 'dev-lang/* ~amd64' >> /etc/portage/package.accept_keywords/python
 RUN ROOT=/python FEATURES='-usersandbox' emerge python
 
 # ------------------- shrink

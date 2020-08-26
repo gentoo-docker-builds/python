@@ -6,9 +6,8 @@ ENV FEATURES="-mount-sandbox -ipc-sandbox -network-sandbox -pid-sandbox -usersan
 COPY --from=gentoo/portage:latest /var/db/repos/gentoo /var/db/repos/gentoo
 
 # ------------------- emerge
-RUN echo "gdbm ipv6 ncurses readline ssl xml" >> /etc/portage/package.use/python
 RUN emerge -C sandbox
-RUN echo 'dev-lang/* ~amd64' >> /etc/portage/package.accept_keywords/python
+RUN echo 'dev-lang/* ~amd64' >> /etc/portage/package.accept_keywords/zz-autounmask
 RUN ROOT=/python FEATURES='-usersandbox' emerge python
 
 # ------------------- shrink

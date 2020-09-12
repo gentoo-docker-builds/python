@@ -5,21 +5,15 @@ on:
     # Publish `master` as Docker `latest` image.
     branches:
       - master
+  schedule:
+    - cron: '0 3 * * *'
 
-    # Publish `v1.2.3` tags as releases.
-    tags:
-      - v*
-
-  # Run tests for any PRs.
   pull_request:
 
 env:
-  # TODO: Change variable to your image's name.
   IMAGE_NAME: python
 
 jobs:
-
-#ACCEPT_KEYWORDS="~amd64" emerge -s dev-lang/python | grep "Latest version available" | head -1 | awk '{print $4}'
 
   check_version:
     runs-on: ubuntu-latest
@@ -38,15 +32,33 @@ jobs:
       - name: latest python version
         run: echo 'Latest available python version in portage is' $LATEST
 
-  build_and_push:
+  check_image_version:
     needs: [check_version]
+    runs-on: ubuntu-latest
+    container: ghcr.io/gentoo-docker-builds/skopeo:1.1.1
+    outputs:
+      version: ${{ steps.version.outputs.UPDATE }}
+    steps:
+
+      - name: comparison
+        run: |
+          PORTAGE_VERSION=${{needs.check_version.outputs.version}} 
+          skopeo inspect docker://ghcr.io/gentoo-docker-builds/awscli:$PORTAGE_VERSION | grep -q "$PORTAGE_VERSION"
+          if [ $? -eq 0 ];
+          then
+            echo "::set-output name=UPDATE::no"
+          else
+            echo "::set-output name=UPDATE::yes"
+          fi
+        id: version
+
+  build_and_push:
+    needs: [check_image_version]
+    if: needs.check_image_version.outputs.version == 'yes'
     runs-on: ubuntu-latest
     steps:
 
       - uses: actions/checkout@v2
-
-      - name: version check
-        run: echo ${{needs.check_version.outputs.version}}
 
       - name: Build image
         run: docker build . --file Dockerfile --tag $IMAGE_NAME
@@ -63,12 +75,6 @@ jobs:
 
           # Strip git ref prefix from portage run
           VERSION=${{needs.check_version.outputs.version}}
-
-          # Strip "v" prefix from tag name
-          [[ "${{ github.ref }}" == "refs/tags/"* ]] && VERSION=$(echo $VERSION | sed -e 's/^v//')
-
-          # Use Docker `latest` tag convention
-          [ "$VERSION" == "master" ] && VERSION=latest
 
           echo IMAGE_ID=$IMAGE_ID
           echo VERSION=$VERSION

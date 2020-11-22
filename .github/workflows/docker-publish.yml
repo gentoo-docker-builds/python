@@ -50,7 +50,7 @@ jobs:
         id: version
 
   build_and_push:
-    needs: [check_image_version]
+    needs: [check_version, check_image_version]
     if: needs.check_image_version.outputs.version == 'yes'
     runs-on: ubuntu-latest
     steps:

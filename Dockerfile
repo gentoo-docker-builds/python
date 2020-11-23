@@ -3,8 +3,7 @@ FROM ghcr.io/gentoo-docker-builds/gendev:latest as builder
 
 # ------------------- emerge
 RUN emerge -C sandbox
-RUN mkdir -p /etc/portage/package.accept_keywords
-RUN echo 'dev-lang/* ~amd64' >> /etc/portage/package.accept_keywords/python
+COPY portage/python.accept_keywords /etc/portage/package.accept_keywords/python
 RUN ROOT=/python FEATURES='-usersandbox' emerge python
 
 # ------------------- shrink
